@@ -18,14 +18,13 @@ package com.example;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import javax.servlet.http.HttpServletRequest;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
@@ -37,6 +36,7 @@ import org.springframework.security.oauth2.client.web.reactive.function.client.S
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
@@ -49,7 +49,7 @@ import static org.springframework.security.oauth2.client.web.reactive.function.c
 
 @SpringBootApplication
 @Controller
-public class SocialApplication extends WebSecurityConfigurerAdapter {
+public class SocialApplication {
 
 	@Bean
 	public WebClient rest(ClientRegistrationRepository clients, OAuth2AuthorizedClientRepository authz) {
@@ -100,14 +100,15 @@ public class SocialApplication extends WebSecurityConfigurerAdapter {
 		return message;
 	}
 
-	@Override
-	protected void configure(HttpSecurity http) throws Exception {
+	@Bean
+	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+		// @formatter:off
 		SimpleUrlAuthenticationFailureHandler handler = new SimpleUrlAuthenticationFailureHandler("/");
 
 		// @formatter:off
-		http.antMatcher("/**")
-			.authorizeRequests(a -> a
-				.antMatchers("/", "/error", "/webjars/**").permitAll()
+		http
+			.authorizeHttpRequests(a -> a
+				.requestMatchers("/", "/error", "/webjars/**").permitAll()
 				.anyRequest().authenticated()
 			)
 			.exceptionHandling(e -> e
@@ -125,6 +126,7 @@ public class SocialApplication extends WebSecurityConfigurerAdapter {
 					handler.onAuthenticationFailure(request, response, exception);
 				})
 			);
+		return http.build();
 		// @formatter:on
 	}
 
